@@ -43,8 +43,9 @@ module Selection
   def method_missing(m, *args, &block)
     # if m == :find_by_name
     #   find_by(:name, +args[0])    # *****
-    if m.to_s = ~/find_by_(.*)/
-      find_by(   ,+args[0])    # *****
+    #    if m.to_s = ~/find_by_(.*)/   # regex to split
+    if m.to_s[0..7] == "find_by_"      # split method into 'find_by_' + remainder
+      find_by(m.to_s[8..-1] ,+args[0])
     end
   end
 
