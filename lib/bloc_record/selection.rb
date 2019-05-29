@@ -138,12 +138,33 @@ module Selection
     rows_to_array(rows)
   end
 
-  def order(*args)
-     if args.count > 1
+  # def order(*args)
+  #    if args.count > 1
+  #      order = args.join(",")
+  #    else
+  #      order = args.first.to_s
+  #    end
+  #
+  #   rows = connection.execute <<-SQL
+  #     SELECT * FROM #{table}
+  #     ORDER BY #{order};
+  #   SQL
+  #   rows_to_array(rows)
+  # end
+
+  def order(*args)  # need take string, symbol or hash
+    case args.first
+    when String
+      if args.count > 1
        order = args.join(",")
-     else
+      end
+    when Symbol
        order = args.first.to_s
-     end
+    when Hash
+      order_hash = BlocRecord::Utility.convert_keys(args.first)
+      order = order_hash.map {|key, value| "#{key}=#{BlocRecord::Utility.sql_strings(value)}"}.join(" and ")
+    end
+  end
 
     rows = connection.execute <<-SQL
       SELECT * FROM #{table}
@@ -151,6 +172,7 @@ module Selection
     SQL
     rows_to_array(rows)
   end
+
 
 
   # def join(sql_string)   # eg. 'JOIN table_name ON some_condition'
@@ -172,9 +194,16 @@ module Selection
           INNER JOIN #{args.first} ON #{args.first}.#{table}_id = #{table}.id
         SQL
         # nb requires standard naming conventions to work  e.g. table_id column name
+      when Hash
+        key = args.first.keys.first
+        value = args.first(key)
+        rows = connection.execute <<-SQL
+          SELECT * FROM #{table}
+          INNER JOIN #{key} ON #{key}.#{table}_id = #{table}.id
+          INNER JOIN #{value} ON #{value}.#{key}_id = #{key}.id
+        SQL
       end
     end
-
     rows_to_array(rows)
   end
 
