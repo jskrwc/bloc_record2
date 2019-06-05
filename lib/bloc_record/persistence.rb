@@ -56,35 +56,45 @@ module Persistence
       new(data)
     end
 
-    # def update(id, updates)
-    def update(ids, updates) # take array of ids, not just single id
-      # convert non-id parameters to array
-      updates = BlocRecord::Utility.convert_keys(updates)
-      updates.delete "id"
-      # use map to convert updates to array of strings (each in format "key=value")
-      updates_array = updates.map { |key, value| "#{key}=#{BlocRecord::Utility.sql_strings(value)}" }
+    def update(ids, updates)
+      case updates
+      when hash
+        # convert non-id parameters to array
+        updates = BlocRecord::Utility.convert_keys(updates)
+        updates.delete "id"
+        # use map to convert updates to array of strings (each in format "key=value")
+        updates_array = updates.map { |key, value| "#{key}=#{BlocRecord::Utility.sql_strings(value)}" }
 
-      # determine class type of ids, to determine string to append to where_clause
-      if ids.class == Fixnum
-        where_clause = "WHERE id = #{ids};"
-      elsif ids.class == Array
-        where_clause = ids.empty? ? ";" : "WHERE id IN (#{ids.join(",")});"
-      else
-        where_clause = ";"
+        # determine class type of ids, to determine string to append to where_clause
+        if ids.class == Fixnum
+          where_clause = "WHERE id = #{ids};"
+        elsif ids.class == Array
+          where_clause = ids.empty? ? ";" : "WHERE id IN (#{ids.join(",")});"
+        else
+          where_clause = ";"
+        end
+
+        # build out fully formed SQL statement to update the db; then execute it
+        connection.execute <<-SQL
+          UPDATE #{table}
+          SET #{updates_array * ","} #{where_clause}
+        SQL
+
+        true
+
+      when array
+        updates.each_with_index { |data, index| update(ids[index], data) }
       end
+    end
 
-      # build out fully formed SQL statement to update the db; then execute it
-      connection.execute <<-SQL
-        UPDATE #{table}
-        SET #{updates_array * ","} #{where_clause}
-      SQL
-
-      true
+    def method_missing(m, *args, &block)
+      if m == :update_name
+        update(self.id, {name: *args[0]})
+      end
     end
 
     def update_all(updates)
       update(nil, updates)
     end
-
   end
 end
