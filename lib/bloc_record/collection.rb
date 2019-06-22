@@ -6,5 +6,10 @@ module BlocRecord
       # see if any items in array. if so, retreive first, else return false
       self.any? ? self.first.class.update(ids, updates) : false
     end
+
+    def destroy_all
+      self.each { |obj| obj.destroy }
+    end
+    
   end
 end

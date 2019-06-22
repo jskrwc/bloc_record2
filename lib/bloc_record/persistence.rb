@@ -104,22 +104,56 @@ module Persistence
       true
     end
 
-    def destroy_all(conditions_hash=nil)
-      if conditions_hash && !conditions_hash.empty?
-        conditions_hash = BlocRecord::Utility.convert_keys(conditions_hash)
-        conditions = conditions_hash.map {|key, value| "#{key}=#{BlocRecord::Utility.sql_strings(value)}"}.join(" and ")
+  #     w/ string conditions  Entry.destroy_all("phone_number = '999-999-9999'")
+  #     w/ Array conditions   Entry.destroy_all("phone_number = ?", '999-999-9999')
+  #     array of instances    User.where(age: 20).destroy_all
 
-        connection.execute <<-SQL
-          DELETE FROM #{table}
-          WHERE #{conditions};
-        SQL
-      else
-        connection.execute <<-SQL
-          DELETE FROM #{table}
-        SQL
-      end
+   def destroy_all(*args)
+     if args.empty?
+       connection.execute <<-SQL
+         DELETE FROM #{table}
+       SQL
+       return true
+     end
 
-      true
-    end
-  end
+     if args.count > 1
+       expression = args.shift
+       array_delete = args
+     else
+       case args.first
+       when Hash
+         conditions_hash = BlocRecord::Utility.convert_keys(args.first)
+         expression = conditions_hash.map {|key, value| "#{key}=#{BlocRecord::Utility.sql_strings(value)}"}.join(" and ")
+       when String  # ("phone_number = '999-999-9999'")
+         expression = args.first
+       end
+     end
+
+     sql <<-SQL
+       DELETE FROM #{table}
+       WHERE #{expression};
+     SQL
+     connection.execute(sql, array_delete)
+
+     true
+   end
+
+    # def destroy_all(conditions_hash=nil)
+    #   if conditions_hash && !conditions_hash.empty?
+    #     conditions_hash = BlocRecord::Utility.convert_keys(conditions_hash)
+    #     conditions = conditions_hash.map {|key, value| "#{key}=#{BlocRecord::Utility.sql_strings(value)}"}.join(" and ")
+    #
+    #     connection.execute <<-SQL
+    #       DELETE FROM #{table}
+    #       WHERE #{conditions};
+    #     SQL
+    #   else
+    #     connection.execute <<-SQL
+    #       DELETE FROM #{table}
+    #     SQL
+    #   end
+    #
+    #   true
+    # end
+  # end
 end
