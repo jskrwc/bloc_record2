@@ -56,9 +56,12 @@ module Persistence
       new(data)
     end
 
+    #  #update mulitple records:  e.g.  people = { 1 => { "first_name" => "David" }, 2 => { "first_name" => "Jeremy" } }
+    #  Person.update(people.keys, people.values)
+
     def update(ids, updates)
       case updates
-      when hash
+      when Hash
         # convert non-id parameters to array
         updates = BlocRecord::Utility.convert_keys(updates)
         updates.delete "id"
@@ -82,7 +85,7 @@ module Persistence
 
         true
 
-      when array
+      when Array
         updates.each_with_index { |data, index| update(ids[index], data) }
       end
     end
