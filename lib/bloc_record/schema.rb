@@ -1,3 +1,4 @@
+require 'pg'
 require 'sqlite3'
 require 'bloc_record/utility'
 

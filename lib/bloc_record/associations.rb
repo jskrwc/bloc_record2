@@ -1,3 +1,4 @@
+require 'pg'
 require 'sqlite3'
 require 'active_support/inflector'
 
@@ -23,6 +24,23 @@ module Associations
       collection
     end
   end
+
+
+  def has_one(association)
+    define_method(association) do
+       rows = self.class.connection.execute <<-SQL
+         SELECT * FROM #{association.to_s}
+         WHERE #{self.class.table}_id = #{self.id}
+       SQL
+
+       class_name = association.to_s.classify.constantize
+       if row
+         data = Hash[class_name.columns.zip(row)]
+         class_name.new(data)
+       end
+    end
+  end
+
 
   def belongs_to(association)
     define_method(association) do
