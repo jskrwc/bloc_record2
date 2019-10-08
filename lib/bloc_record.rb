@@ -3,7 +3,7 @@ module BlocRecord
   # e.g. BlockRecord.connect_to("db/address_bloc.db", :sqlite3)
   def self.connect_to(filename, db_type)   # filename, sqlite or pg
     @database_filename = filename
-    @database_type = db_type.to_s
+    @database_type = db_type 
   end
 
   def self.database_filename
